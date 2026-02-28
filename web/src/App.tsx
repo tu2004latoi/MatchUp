@@ -2,9 +2,10 @@ import { useState, useReducer, useEffect } from 'react'
 import './App.css'
 import MyUserReducer, { type MyUserState } from './component/reducer/MyUserReducer';
 import Cookies from 'js-cookie';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { authApis, endPoints } from './config/Apis.ts';
 import { MyDispatcherContext, MyUserContext } from './config/MyContexts.ts';
+import { ToastProvider } from './component/ui/Toast';
 import LoginPage from './page/auth/LoginPage.tsx';
 import MatchUpExplore from './page/user/MatchUpExplorePage.tsx';
 import SignUpPage from './page/auth/SignUpPage.tsx';
@@ -66,17 +67,19 @@ function App() {
   );
 
   return (
-    <MyUserContext.Provider value={user}>
-      <MyDispatcherContext.Provider value={dispatch}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<MatchUpExplore />} />
-            <Route path="/signup" element={<SignUpPage />} />
-          </Routes>
-        </BrowserRouter>
-      </MyDispatcherContext.Provider>
-    </MyUserContext.Provider>
+    <ToastProvider>
+      <MyUserContext.Provider value={user}>
+        <MyDispatcherContext.Provider value={dispatch}>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<MatchUpExplore />} />
+              <Route path="/signup" element={<SignUpPage />} />
+            </Routes>
+          </BrowserRouter>
+        </MyDispatcherContext.Provider>
+      </MyUserContext.Provider>
+    </ToastProvider>
   );
 }
 
