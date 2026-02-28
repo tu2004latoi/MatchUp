@@ -10,17 +10,57 @@ import {
   Facebook,
   Flag,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import Apis, { endPoints } from "../../config/Apis";
+import { useToast } from "../../component/ui/Toast";
 
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password !== confirmPassword) {
+      showToast({
+        variant: "error",
+        title: "Passwords do not match",
+        description: "Please try again.",
+      });
+      return;
+    }
+    try{
+      const res = await Apis.post(endPoints.auth.register, formData);
+      if (res.data) {
+        showToast({
+          variant: "success",
+          title: "Đăng ký thành công",
+          description: "Bạn có thể đăng nhập ngay bây giờ.",
+        });
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen bg-white font-sans text-slate-900">
       
-      {/* ================= LEFT SIDE ================= */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-blue-900">
         
-        {/* Background Image */}
         <img
           src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&q=80&w=2070"
           alt="Sports Background"
@@ -31,7 +71,6 @@ const SignUpPage = () => {
 
         <div className="relative z-10 p-16 flex flex-col justify-between w-full">
           
-          {/* Logo */}
           <div className="flex items-center gap-3 text-3xl font-black text-white italic tracking-tighter">
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-xl">
               <Flag size={28} strokeWidth={3} />
@@ -39,7 +78,6 @@ const SignUpPage = () => {
             MatchUp
           </div>
 
-          {/* Headline */}
           <div>
             <motion.h1
               initial={{ opacity: 0, x: -20 }}
@@ -60,7 +98,6 @@ const SignUpPage = () => {
             </p>
           </div>
 
-          {/* Social Proof */}
           <div className="bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-[32px] flex items-center gap-4 self-start">
             <div className="flex -space-x-3">
               {[1, 2, 3, 4].map((i) => (
@@ -83,14 +120,12 @@ const SignUpPage = () => {
         </div>
       </div>
 
-      {/* ================= RIGHT SIDE ================= */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          {/* Title */}
           <div className="mb-10 text-center lg:text-left">
             <h2 className="text-3xl font-bold tracking-tight mb-2">
               Get Started
@@ -100,7 +135,6 @@ const SignUpPage = () => {
             </p>
           </div>
 
-          {/* Social Buttons */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button className="flex items-center justify-center gap-3 py-3.5 border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-sm">
               <Chrome size={20} className="text-blue-500" />
@@ -113,18 +147,15 @@ const SignUpPage = () => {
             </button>
           </div>
 
-          {/* Divider */}
           <div className="relative flex items-center justify-center mb-8">
             <div className="w-full border-t border-slate-100" />
             <span className="absolute px-4 bg-white text-xs text-slate-400 font-bold uppercase tracking-widest">
-              Or with email
+              Or with username
             </span>
           </div>
 
-          {/* Form */}
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             
-            {/* Username */}
             <div>
               <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
                 Username
@@ -136,31 +167,15 @@ const SignUpPage = () => {
                 />
                 <input
                   type="text"
+                  value={formData.username}
+                  onChange={handleChange}
+                  name="username"
                   placeholder="alex_sports"
                   className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all"
                 />
               </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  size={18}
-                />
-                <input
-                  type="email"
-                  placeholder="alex@matchup.com"
-                  className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
                 Password
@@ -172,6 +187,9 @@ const SignUpPage = () => {
                 />
                 <input
                   type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange}
+                  name="password"
                   placeholder="••••••••"
                   className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-12 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all"
                 />
@@ -185,7 +203,32 @@ const SignUpPage = () => {
               </div>
             </div>
 
-            {/* Terms */}
+            <div>
+              <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={18}
+                />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-12 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center gap-3 py-2">
               <input
                 type="checkbox"
@@ -207,13 +250,11 @@ const SignUpPage = () => {
               </label>
             </div>
 
-            {/* Submit */}
             <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-100 transition-all active:scale-[0.98] mt-4 text-sm">
               Sign Up
             </button>
           </form>
 
-          {/* Footer */}
           <p className="text-center mt-10 text-sm font-medium text-slate-500">
             Already have an account?{" "}
             <a href="/login" className="text-blue-600 font-bold hover:underline">
