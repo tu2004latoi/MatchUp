@@ -2,6 +2,7 @@ package com.matchup.service;
 
 import com.matchup.model.Location;
 import com.matchup.model.RoomMember;
+import com.matchup.model.enums.RoomType;
 import com.matchup.repository.RoomMemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -22,6 +23,24 @@ public class RoomMemberService {
 
     public RoomMember getRoomMemberById(int id){
         Optional<RoomMember> roomMember = this.roomMemberRepository.findById(id);
+
+        return roomMember.orElse(null);
+    }
+    
+    public RoomMember getRoomMemberByUserIdAndRoomId(int userId, int roomId){
+        Optional<RoomMember> roomMember = this.roomMemberRepository.findByUserIdAndRoomId(userId, roomId);
+
+        return roomMember.orElse(null);
+    }
+
+    public List<RoomMember> getRoomMemberByRoomId(int roomId){
+        Optional<List<RoomMember>> roomMember = this.roomMemberRepository.findByRoomId(roomId);
+
+        return roomMember.orElse(null);
+    }
+
+    public List<RoomMember> getRoomMemberByUserId(int userId){
+        Optional<List<RoomMember>> roomMember = this.roomMemberRepository.findByUserId(userId);
 
         return roomMember.orElse(null);
     }
@@ -51,5 +70,9 @@ public class RoomMemberService {
         }
 
         this.roomMemberRepository.delete(roomMember);
+    }
+
+    public List<RoomMember> getRoomMemberByUserIdAndEventRoom(Integer userId) {
+        return roomMemberRepository.findByUserIdAndRoomType(userId, RoomType.EVENT);
     }
 }

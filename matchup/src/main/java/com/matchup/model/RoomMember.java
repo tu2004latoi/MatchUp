@@ -1,8 +1,9 @@
 package com.matchup.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.matchup.model.enums.AttendanceStatus;
 import com.matchup.model.enums.RoomRole;
-import com.matchup.model.enums.StatusMember;
+import com.matchup.model.enums.MemberStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,11 +37,18 @@ public class RoomMember implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private StatusMember statusMember;
+    private MemberStatus statusMember;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "attendance_status")
+    private AttendanceStatus attendanceStatus;
+
+    @Column(name = "is_point")
+    private Boolean isPoint = false;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "joined_at")
-    private LocalDateTime joinedAt;
+    private LocalDateTime joinedAt; 
 
     @PrePersist
     private void onCreate(){

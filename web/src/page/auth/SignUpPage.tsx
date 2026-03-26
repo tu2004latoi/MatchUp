@@ -9,6 +9,8 @@ import {
   Chrome,
   Facebook,
   Flag,
+  UserCircle,
+  VenusAndMars,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Apis, { endPoints } from "../../config/Apis";
@@ -21,10 +23,13 @@ const SignUpPage = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+    firstName: "",
+    lastName: "",
+    gender: "MALE",
   });
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -32,11 +37,19 @@ const SignUpPage = () => {
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.username || !formData.password || !formData.firstName || !formData.lastName) {
+      showToast({
+        type: "error",
+        title: "Vui lòng nhập đầy đủ thông tin",
+        message: "Vui lòng thử lại.",
+      });
+      return;
+    }
     if (formData.password !== confirmPassword) {
       showToast({
-        variant: "error",
-        title: "Passwords do not match",
-        description: "Please try again.",
+        type: "error",
+        title: "Mật khẩu xác nhận không khớp",
+        message: "Vui lòng thử lại.",
       });
       return;
     }
@@ -44,9 +57,9 @@ const SignUpPage = () => {
       const res = await Apis.post(endPoints.auth.register, formData);
       if (res.data) {
         showToast({
-          variant: "success",
+          type: "success",
           title: "Đăng ký thành công",
-          description: "Bạn có thể đăng nhập ngay bây giờ.",
+          message: "Bạn có thể đăng nhập ngay bây giờ.",
         });
         navigate("/login");
       }
@@ -155,6 +168,70 @@ const SignUpPage = () => {
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
+                  First Name
+                </label>
+                <div className="relative">
+                  <UserCircle
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    name="firstName"
+                    placeholder="John"
+                    className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
+                  Last Name
+                </label>
+                <div className="relative">
+                  <UserCircle
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    name="lastName"
+                    placeholder="Doe"
+                    className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">
+                Gender
+              </label>
+              <div className="relative">
+                <VenusAndMars
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={18}
+                />
+                <select
+                  value={formData.gender}
+                  onChange={handleChange}
+                  name="gender"
+                  className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-blue-600 text-sm outline-none transition-all appearance-none"
+                >
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+            </div>
             
             <div>
               <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">

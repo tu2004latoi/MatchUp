@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Notifications</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .notification { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .notification.unread { background: #e3f2fd; border-color: #2196f3; }
+        .notification h4 { margin: 0 0 5px 0; color: #333; }
+        .notification p { margin: 0 0 5px 0; }
+        .notification small { color: #666; }
+        .controls { margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        button { padding: 8px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .status.connected { background: #d4edda; color: #155724; }
+        .status.disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Real-time Notification System</h1>
+    
+    <div class="controls">
+        <div>
+            <label>User ID: </label>
+            <input type="number" id="userId" value="1">
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+        <div class="status" id="status">Status: Disconnected</div>
+    </div>
+
+    <div class="controls">
+        <h3>Test Create Notification</h3>
+        <div>
+            <input type="text" id="testTitle" placeholder="Title" value="Test Notification">
+            <input type="text" id="testContent" placeholder="Content" value="You have a new notification!">
+            <button onclick="createTestNotification()">Create Notification</button>
+        </div>
+    </div>
+
+    <div>
+        <h3>Real-time Notifications:</h3>
+        <div id="notifications"></div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let userId = null;
+
+        function updateStatus(message, isConnected) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = 'Status: ' + message;
+            statusDiv.className = 'status ' + (isConnected ? 'connected' : 'disconnected');
+        }
+
+        function connect() {
+            userId = document.getElementById('userId').value;
+            const socket = new SockJS('http://localhost:8080/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+                updateStatus('Connected to WebSocket', true);
+                
+                // Subscribe to user-specific notifications
+                stompClient.subscribe('/topic/notifications/' + userId, function (message) {
+                    const notification = JSON.parse(message.body);
+                    showNotification(notification);
+                });
+            }, function (error) {
+                console.error('WebSocket connection error:', error);
+                updateStatus('Connection failed', false);
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            updateStatus('Disconnected', false);
+            console.log("Disconnected");
+        }
+
+        function showNotification(notification) {
+            const notificationsDiv = document.getElementById('notifications');
+            const notificationElement = document.createElement('div');
+            notificationElement.className = 'notification ' + (notification.isRead ? '' : 'unread');
+            notificationElement.innerHTML = `
+                <h4>${notification.title}</h4>
+                <p>${notification.content}</p>
+                <small>User ID: ${notification.user.id} | Created: ${new Date(notification.createdAt).toLocaleString()}</small>
+            `;
+            
+            // Add to top of list
+            notificationsDiv.insertBefore(notificationElement, notificationsDiv.firstChild);
+            
+            // Show browser notification if permission granted
+            if (Notification.permission === 'granted') {
+                new Notification(notification.title, {
+                    body: notification.content,
+                    icon: '/icon-192x192.png'
+                });
+            }
+        }
+
+        function createTestNotification() {
+            const title = document.getElementById('testTitle').value;
+            const content = document.getElementById('testContent').value;
+            
+            fetch('http://localhost:8080/api/v1/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    content: content,
+                    userId: parseInt(userId)
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Notification created successfully');
+                } else {
+                    console.error('Failed to create notification');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Request notification permission on page load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

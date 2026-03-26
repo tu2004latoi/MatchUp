@@ -6,9 +6,15 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { authApis, endPoints } from './config/Apis.ts';
 import { MyDispatcherContext, MyUserContext } from './config/MyContexts.ts';
 import { ToastProvider } from './component/ui/Toast';
+import { WebSocketProvider } from './context/WebSocketContext';
 import LoginPage from './page/auth/LoginPage.tsx';
 import MatchUpExplore from './page/user/MatchUpExplorePage.tsx';
 import SignUpPage from './page/auth/SignUpPage.tsx';
+import JoinedRoomsList from './page/user/JoinedRoomsList.tsx';
+import ActiveRoomView from './page/user/ActiveRoomView.tsx';
+import UserProfilePage from './page/user/UserProfilePage.tsx';
+import FriendRequestsPage from './page/user/FriendRequestsPage.tsx';
+import MessagesPage from './page/user/MessagesPage.tsx';
 
 function App() {
   const [user, dispatch] = useReducer(MyUserReducer, null as MyUserState);
@@ -67,19 +73,27 @@ function App() {
   );
 
   return (
-    <ToastProvider>
-      <MyUserContext.Provider value={user}>
-        <MyDispatcherContext.Provider value={dispatch}>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={<MatchUpExplore />} />
-              <Route path="/signup" element={<SignUpPage />} />
-            </Routes>
-          </BrowserRouter>
-        </MyDispatcherContext.Provider>
-      </MyUserContext.Provider>
-    </ToastProvider>
+    <WebSocketProvider>
+      <ToastProvider>
+        <MyUserContext.Provider value={user}>
+          <MyDispatcherContext.Provider value={dispatch}>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/" element={<MatchUpExplore />} />
+                <Route path="/signup" element={<SignUpPage />} />
+                <Route path="/joined-rooms" element={<JoinedRoomsList />} />
+                <Route path="/active-room/:roomId" element={<ActiveRoomView />} />
+                <Route path="/profile/me" element={<UserProfilePage />} />
+                <Route path="/profile/:userId" element={<UserProfilePage />} />
+                <Route path="/friend-requests" element={<FriendRequestsPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
+              </Routes>
+            </BrowserRouter>
+          </MyDispatcherContext.Provider>
+        </MyUserContext.Provider>
+      </ToastProvider>
+    </WebSocketProvider>
   );
 }
 

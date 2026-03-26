@@ -1,6 +1,7 @@
 package com.matchup.controller;
 
 import com.matchup.dto.RegisterRequest;
+import com.matchup.dto.UpdateUserProfileRequest;
 import com.matchup.model.User;
 import com.matchup.model.UserProfile;
 import com.matchup.model.enums.UserRole;
@@ -43,7 +44,11 @@ public class UserController {
 
         UserProfile userProfile = new UserProfile();
         userProfile.setUser(user);
+        userProfile.setFirstName(registerRequest.getFirstName());
+        userProfile.setLastName(registerRequest.getLastName());
+        userProfile.setGender(registerRequest.getGender());
         userProfile.setRole(UserRole.USER);
+        userProfile.setAvatar("https://api.dicebear.com/7.x/avataaars/svg?seed=default");
         user.setUserProfile(userProfile);
 
         this.userService.addUser(user);
@@ -73,6 +78,24 @@ public class UserController {
     @CrossOrigin
     public ResponseEntity<User> getProfile(Principal principal) {
         return new ResponseEntity<>(this.userService.getUserByUsername(principal.getName()), HttpStatus.OK);
+    }
+
+    @GetMapping("/v1/users/{id}/profile")
+    public ResponseEntity<UserProfile> getUserProfile(@PathVariable int id) {
+        return new ResponseEntity<>(this.userProfileService.getUserProfileByUserId(id), HttpStatus.OK);
+    }
+
+    @PatchMapping("/v1/users/{id}/profile")
+    public ResponseEntity<UserProfile> updateUserProfile(@PathVariable int id, @ModelAttribute UpdateUserProfileRequest updateUserProfileRequest) {
+        UserProfile updatedUserProfile = this.userProfileService.getUserProfileByUserId(id);
+        updatedUserProfile.setFirstName(updateUserProfileRequest.getFirstName());
+        updatedUserProfile.setLastName(updateUserProfileRequest.getLastName());
+        updatedUserProfile.setFile(updateUserProfileRequest.getFile());
+        updatedUserProfile.setDob(updateUserProfileRequest.getDob());
+        updatedUserProfile.setGender(updateUserProfileRequest.getGender());
+        
+        this.userProfileService.updateUserProfile(updatedUserProfile);
+        return new ResponseEntity<>(updatedUserProfile, HttpStatus.OK);
     }
 
     @DeleteMapping("/v1/users/{id}")
