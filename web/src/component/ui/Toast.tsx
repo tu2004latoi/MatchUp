@@ -1,22 +1,33 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { Bell, Check, Trophy, UserPlus, X } from "lucide-react";
 
-type ToastVariant = "success" | "error" | "info";
+type ToastType = "invite" | "friend" | "system" | "success" | "error" | "info";
 
 export type ToastOptions = {
-  variant?: ToastVariant;
+  type?: ToastType;
   title: string;
-  description?: string;
+  message?: string;
   durationMs?: number;
+  onResolve?: () => void;
+  onDismiss?: () => void;
+  resolveLabel?: string;
+  dismissLabel?: string;
+  // Backward-compatible props
+  variant?: "success" | "error" | "info";
+  description?: string;
 };
 
 type ToastItem = {
   id: string;
-  variant: ToastVariant;
+  type: ToastType;
   title: string;
-  description?: string;
-  expiresAt: number;
+  message?: string;
+  durationMs: number;
+  onResolve?: () => void;
+  onDismiss?: () => void;
+  resolveLabel?: string;
+  dismissLabel?: string;
 };
 
 type ToastContextValue = {
@@ -25,25 +36,13 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const variantStyles: Record<ToastVariant, { bar: string; title: string; border: string; bg: string }> = {
-  success: {
-    bar: "bg-emerald-500",
-    title: "text-emerald-700",
-    border: "border-emerald-200",
-    bg: "bg-white",
-  },
-  error: {
-    bar: "bg-rose-500",
-    title: "text-rose-700",
-    border: "border-rose-200",
-    bg: "bg-white",
-  },
-  info: {
-    bar: "bg-blue-500",
-    title: "text-blue-700",
-    border: "border-blue-200",
-    bg: "bg-white",
-  },
+const toastConfigs: Record<ToastType, { icon: typeof Trophy; color: string; label: string; progress: string }> = {
+  invite: { icon: Trophy, color: "bg-blue-600", label: "Room Invite", progress: "bg-blue-600/30" },
+  friend: { icon: UserPlus, color: "bg-emerald-500", label: "Friend Request", progress: "bg-emerald-500/30" },
+  system: { icon: Bell, color: "bg-amber-500", label: "System Alert", progress: "bg-amber-500/30" },
+  success: { icon: Check, color: "bg-emerald-500", label: "Success", progress: "bg-emerald-500/30" },
+  error: { icon: X, color: "bg-rose-500", label: "Error", progress: "bg-rose-500/30" },
+  info: { icon: Bell, color: "bg-blue-600", label: "Info", progress: "bg-blue-600/30" },
 };
 
 function randomId() {
@@ -65,14 +64,21 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
 
   const showToast = useCallback(
     (opts: ToastOptions) => {
-      const now = Date.now();
-      const durationMs = opts.durationMs ?? 2500;
+      const durationMs = opts.durationMs ?? 5000;
+
+      const resolvedType: ToastType = opts.type
+        ?? (opts.variant === "success" ? "success" : opts.variant === "error" ? "error" : opts.variant === "info" ? "info" : "system");
+
       const item: ToastItem = {
         id: randomId(),
-        variant: opts.variant ?? "info",
+        type: resolvedType,
         title: opts.title,
-        description: opts.description,
-        expiresAt: now + durationMs,
+        message: opts.message ?? opts.description,
+        durationMs,
+        onResolve: opts.onResolve,
+        onDismiss: opts.onDismiss,
+        resolveLabel: opts.resolveLabel,
+        dismissLabel: opts.dismissLabel,
       };
 
       setToasts((prev) => [item, ...prev].slice(0, 3));
@@ -115,40 +121,105 @@ export const ToastViewport = ({
   onDismiss: (id: string) => void;
 }) => {
   return (
-    <div className="fixed top-5 right-5 z-[9999] flex w-[360px] max-w-[calc(100vw-2.5rem)] flex-col gap-3">
+    <div className="fixed top-5 right-5 z-[9999] flex w-80 max-w-[calc(100vw-2.5rem)] flex-col">
       <AnimatePresence initial={false}>
-        {toasts.map((t) => {
-          const s = variantStyles[t.variant];
-          return (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: -12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.98 }}
-              transition={{ duration: 0.18 }}
-              className={`relative overflow-hidden rounded-2xl border ${s.border} ${s.bg} shadow-xl`}
-            >
-              <div className={`absolute left-0 top-0 h-full w-1.5 ${s.bar}`} />
-              <div className="flex items-start gap-3 p-4 pl-5">
-                <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-extrabold tracking-tight ${s.title}`}>{t.title}</div>
-                  {t.description ? (
-                    <div className="mt-1 text-xs font-medium text-slate-500">{t.description}</div>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onDismiss(t.id)}
-                  className="rounded-lg p-1 text-slate-400 hover:text-slate-700"
-                  aria-label="Close"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            </motion.div>
-          );
-        })}
+        {toasts.map((t) => (
+          <NotificationToast
+            key={t.id}
+            type={t.type}
+            title={t.title}
+            message={t.message}
+            durationMs={t.durationMs}
+            onResolve={t.onResolve}
+            onDismiss={() => {
+              t.onDismiss?.();
+              onDismiss(t.id);
+            }}
+            resolveLabel={t.resolveLabel}
+            dismissLabel={t.dismissLabel}
+          />
+        ))}
       </AnimatePresence>
     </div>
+  );
+};
+
+const NotificationToast = ({
+  type,
+  title,
+  message,
+  durationMs,
+  onResolve,
+  onDismiss,
+  resolveLabel,
+  dismissLabel,
+}: {
+  type: ToastType;
+  title: string;
+  message?: string;
+  durationMs: number;
+  onResolve?: () => void;
+  onDismiss: () => void;
+  resolveLabel?: string;
+  dismissLabel?: string;
+}) => {
+  const { icon: Icon, color, label, progress } = toastConfigs[type] || toastConfigs.system;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 50, scale: 0.9 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 20, scale: 0.95 }}
+      className="relative w-80 mb-4 bg-white/80 backdrop-blur-xl border border-white/20 rounded-[20px] shadow-2xl overflow-hidden group"
+    >
+      <div className="p-5">
+        <div className="flex items-start gap-4">
+          <div className={`${color} w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg`}>
+            <Icon size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+              <button onClick={onDismiss} className="text-slate-300 hover:text-slate-600 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <h4 className="text-sm font-bold text-slate-800 mt-0.5">{title}</h4>
+            {message ? (
+              <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{message}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-2">
+          {type === "invite" || type === "friend" ? (
+            <>
+              <button
+                onClick={() => {
+                  onResolve?.();
+                  onDismiss();
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-all"
+              >
+                <Check size={14} /> {resolveLabel ?? "Accept"}
+              </button>
+              <button
+                onClick={onDismiss}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold py-2 rounded-lg transition-all"
+              >
+                {dismissLabel ?? "Decline"}
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ width: "100%" }}
+        animate={{ width: "0%" }}
+        transition={{ duration: durationMs / 1000, ease: "linear" }}
+        className={`absolute bottom-0 left-0 h-1 ${progress}`}
+      />
+    </motion.div>
   );
 };

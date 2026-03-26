@@ -60,7 +60,7 @@ public class UserProfile {
 
     @Transient
     @JsonIgnore
-    private MultipartFile multipartFile;
+    private MultipartFile file;
 
     @PrePersist
     private void onCreate(){

@@ -12,6 +12,7 @@ const LoginPage = () => {
     username: "",
     password: "",
   });
+  const [error, setError] = useState("");
   const dispatch = useContext(MyDispatcherContext);
   const navigate = useNavigate();
 
@@ -24,20 +25,35 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(""); // Clear previous errors
+    
     try {
       const res = await Apis.post(endPoints.auth.login, formData);
       const token = res.data.token;
       if (token) {
         Cookies.set('token', token, { expires: 7 });
         const userRes = await authApis().get(endPoints.users.getMe);
+        console.log(token);
+        console.log(userRes.data);
         dispatch({
           type: "login",
           payload: userRes.data,
         });
         navigate("/");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      if (error.response) {
+        if (error.response.status === 401) {
+          setError("Tài khoản hoặc mật khẩu không đúng");
+        } else if (error.response.status === 404) {
+          setError("Tài khoản không tồn tại");
+        } else {
+          setError("Đăng nhập thất bại. Vui lòng thử lại.");
+        }
+      } else {
+        setError("Lỗi kết nối. Vui lòng kiểm tra mạng.");
+      }
     }
   };
 
@@ -130,6 +146,12 @@ const LoginPage = () => {
             Jump In
           </button>
         </form>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          </div>
+        )}
 
         <div className="mt-8">
           <div className="relative flex items-center justify-center mb-6">

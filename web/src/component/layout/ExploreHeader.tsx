@@ -1,19 +1,34 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Search, Bell, Plus, User, Settings, LogOut } from 'lucide-react';
+import { Search, Plus, User, Settings, LogOut, DoorClosed, MessageCircle } from 'lucide-react';
 import Cookies from 'js-cookie';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MyDispatcherContext } from '../../config/MyContexts';
+import NotificationPanel from '../ui/NotificationPanel';
 
 type ExploreHeaderProps = {
   onSearchChange?: (value: string) => void;
+  onCreateRoomClick?: () => void;
 };
 
-const ExploreHeader = ({ onSearchChange }: ExploreHeaderProps) => {
+const ExploreHeader = ({ onSearchChange, onCreateRoomClick }: ExploreHeaderProps) => {
   const dispatch = useContext(MyDispatcherContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const avatarMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Get current path to determine active tab
+  const getCurrentPath = () => {
+    return location.pathname;
+  };
+
+  const isActiveTab = (path: string) => {
+    const currentPath = getCurrentPath();
+    if (path === '/' && currentPath === '/') return true;
+    if (path !== '/' && currentPath === path) return true;
+    return false;
+  };
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
@@ -32,12 +47,34 @@ const ExploreHeader = ({ onSearchChange }: ExploreHeaderProps) => {
     };
   }, [avatarMenuOpen]);
 
+  const handleRoom = () => {
+    navigate('/joined-rooms');
+    setAvatarMenuOpen(false);
+  }
+
   const handleLogout = () => {
     Cookies.remove('token');
     dispatch({ type: 'logout' });
     setAvatarMenuOpen(false);
     navigate('/login');
   };
+
+  const handleHome = () => {
+    navigate('/');
+  }
+
+  const handleFriends = () => {
+    navigate('/friend-requests');
+  }
+
+  const handleMessages = () => {
+    navigate('/messages');
+  }
+
+  const handleProfile = () => {
+    navigate('/profile/me');
+    setAvatarMenuOpen(false);
+  }
 
   return (
     <header className="h-[80px] bg-white border-b border-slate-100 flex items-center justify-between px-8 z-10">
@@ -59,27 +96,43 @@ const ExploreHeader = ({ onSearchChange }: ExploreHeaderProps) => {
 
       <nav className="flex items-center gap-8">
         <div className="flex items-center gap-6 text-sm font-bold text-slate-400 border-r border-slate-100 pr-8 mr-4">
-          <a
-            href="#"
-            className="text-blue-600 relative after:absolute after:-bottom-[30px] after:left-0 after:right-0 after:h-1 after:bg-blue-600 after:rounded-t-full"
+          <a  
+            className={`relative transition-all cursor-pointer ${
+              isActiveTab('/') ? 'text-blue-600 after:absolute after:-bottom-[30px] after:left-0 after:right-0 after:h-1 after:bg-blue-600 after:rounded-t-full' : 'hover:text-slate-800'
+            }`}
+            onClick={handleHome}
           >
             Home
           </a>
-          <a href="#" className="hover:text-slate-800 transition-colors">
+          <a 
+            className={`transition-all cursor-pointer ${
+              isActiveTab('/friend-requests') ? 'text-blue-600 relative after:absolute after:-bottom-[30px] after:left-0 after:right-0 after:h-1 after:bg-blue-600 after:rounded-t-full' : 'hover:text-slate-800'
+            }`}
+            onClick={handleFriends}
+          >
             Friends
           </a>
-          <a href="#" className="hover:text-slate-800 transition-colors">
+          <a 
+            className={`transition-all cursor-pointer ${
+              isActiveTab('/messages') ? 'text-blue-600 relative after:absolute after:-bottom-[30px] after:left-0 after:right-0 after:h-1 after:bg-blue-600 after:rounded-t-full' : 'hover:text-slate-800'
+            }`}
+            onClick={handleMessages}
+          >
+            <MessageCircle size={16} className="inline mr-1" />
             Messages
           </a>
         </div>
         <div className="flex items-center gap-4">
-          <button className="bg-[#10B981] hover:bg-emerald-600 text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-emerald-50 shadow-inner active:scale-95 transition-all">
+          <button
+            type="button"
+            onClick={onCreateRoomClick}
+            className="bg-[#10B981] hover:bg-emerald-600 text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-emerald-50 shadow-inner active:scale-95 transition-all"
+          >
             <Plus size={20} strokeWidth={3} />
             Create Room
           </button>
           <div className="p-2.5 text-slate-400 hover:text-slate-800 cursor-pointer relative">
-            <Bell size={24} />
-            <div className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></div>
+            <NotificationPanel />
           </div>
           <div ref={avatarMenuRef} className="relative">
             <button
@@ -104,10 +157,22 @@ const ExploreHeader = ({ onSearchChange }: ExploreHeaderProps) => {
                     type="button"
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
                     role="menuitem"
-                    onClick={() => setAvatarMenuOpen(false)}
+                    onClick={() => {
+                      handleProfile();
+                    }}
                   >
                     <User size={18} className="text-slate-400" />
                     Profile
+                  </button>
+
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                    role="menuitem"
+                    onClick={handleRoom}
+                  >
+                    <DoorClosed size={18} className="text-slate-400" />
+                    Room
                   </button>
 
                   <button

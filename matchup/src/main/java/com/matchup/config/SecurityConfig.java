@@ -29,12 +29,25 @@ public class SecurityConfig {
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login",
                                 "/api/v1/users/**",
-                                "/api/v1/rooms/**",
-                                "/api/v1/locations/**",
-                                "/api/v1/room-members/**"
+                                "/api/v1/categories/**",
+                                "/ws/**"
                         ).permitAll()
                         .requestMatchers(
-                                "/api/v1/users/me"
+                                "/api/v1/users/me",
+                                "/api/v1/rooms",
+                                "/api/v1/rooms/**",
+                                "/api/v1/locations",
+                                "/api/v1/locations/**",
+                                "/api/v1/room-members",
+                                "/api/v1/room-members/**",
+                                "/api/v1/friend-requests",
+                                "/api/v1/friend-requests/**",
+                                "/api/v1/friends",
+                                "/api/v1/friends/**",
+                                "/api/v1/notifications",
+                                "/api/v1/notifications/**",
+                                "/api/v1/messages",
+                                "/api/v1/messages/**"
                         ).hasAnyRole("USER", "ADMIN", "SUPERADMIN")
                         .requestMatchers(
                                 "/"
